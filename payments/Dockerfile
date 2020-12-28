@@ -1,6 +1,6 @@
 FROM maven:3-jdk-8 as builder
 WORKDIR /project
-COPY entities/ entities
+COPY /entities/ entities
 WORKDIR /project/entities
 RUN mvn install
 WORKDIR /project

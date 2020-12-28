@@ -22,7 +22,7 @@ services:
 
   payments:
     build:
-      context: .
+      context: ..
       dockerfile: payments/Dockerfile
     depends_on:
       - mongo
