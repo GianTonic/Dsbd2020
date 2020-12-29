@@ -13,10 +13,9 @@ public class PaymentsService {
     @Autowired
     PaymentsRepository transactionRepository;
 
-    public Iterable<Payments> getAll(){
-        return transactionRepository.findAll();
+    public Iterable<Payments> fromTimestamp_endTimestamp(Long fromTimestamp, Long endTimestamp){
+        return transactionRepository.findByCreationDateTimeBetween(fromTimestamp,endTimestamp);
     }
-
     public Payments addPayments(Payments payments){
         payments.setCreationDateTime(System.currentTimeMillis() / 1000L);
         return transactionRepository.save(payments);
