@@ -6,37 +6,33 @@ import ecomm.payments.data.LoggingError;
 import ecomm.payments.service.PaymentsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import payments.Payments;
-
 import javax.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
 public class PaymentsController {
 
-    @Value("${my-paypal-account}")
+    @Value("${myPaypalAccount}")
     String myAccount;
 
-    @Value("${host-ping}")
-    String host;
+    @Value("${hostPing}")
+    String pingHost;
 
+    @Value("${paypalHost}")
+    String paypalHost;
 
     @Autowired
     PaymentsService paymentsService;
@@ -49,23 +45,22 @@ public class PaymentsController {
     }
 
     @PostMapping(path="/paypal")  //this url should map which you configured in step 5
-    public @ResponseBody void success(HttpServletRequest httpServletRequest) throws Exception{
+    public @ResponseBody void success(HttpServletRequest httpServletRequest){
 
         Map<String,String[]> params =httpServletRequest.getParameterMap();
-        String result = params.entrySet().stream()
-            .map(e -> e.getKey().toString() + "=" + Arrays.stream(e.getValue()).findFirst().get().toString())
-            .collect(Collectors.joining("&"));
-        String uriTest="https://ipnpb.sandbox.paypal.com/cgi-bin/webscr?cmd=_notify-validate&"+result;
-        RestTemplate restTemplate=new RestTemplate();
-        ResponseEntity answer=restTemplate.postForEntity(uriTest,null,String.class);
-        System.out.println(answer.getBody());
-    return;
+        Boolean checkPayments=checkIfVerified(params);
+        Boolean checkMail=checkEmail(Arrays.stream(params.get("receiver_email")).findFirst().get());
+
+        System.out.println(checkMail);
+        System.out.println(checkPayments);
+        return;
     }
+
 
     @PostMapping(path="/ipn")
     public @ResponseBody void ipn(@RequestParam Payments payments){
-        Boolean checkmail=this.checkEmail(payments.getBusiness());
-        if(checkmail) {
+        Boolean checkMail=this.checkEmail(payments.getBusiness());
+        if(checkMail) {
             sendMessage("orders","order_payd",new Gson().toJson(payments));
             System.out.println((payments.toString()));
             paymentsService.addPayments(payments);
@@ -83,7 +78,7 @@ public class PaymentsController {
     }
     
     @Scheduled(fixedDelayString = "${timer}")
-    public void heartbeat() throws Exception {
+    public void heartbeat() {
 
         HeartBeat heartbeat=new HeartBeat();
         heartbeat.setService("payments");
@@ -92,36 +87,19 @@ public class PaymentsController {
         RestTemplate restTemplate=new RestTemplate();
 
         try {
-            restTemplate.postForEntity(host, heartbeat, String.class);
+            restTemplate.postForEntity(pingHost, heartbeat, String.class);
         }
 
         catch (HttpStatusCodeException ex) {
             if (ex.getStatusCode().series() == HttpStatus.Series.SERVER_ERROR) {
                 // handle 5xx errors
                 // raw http status code e.g `500'
-                LoggingError loggingError=new LoggingError();
-                loggingError.setTimestamp(System.currentTimeMillis() / 1000L);
-                loggingError.setSourceIp(Inet4Address.getLocalHost().getHostAddress());
-                loggingError.setService("payments");
-                loggingError.setRequest(this.host);
-                StackTraceElement[] stack = ex.getStackTrace();
-                String exception = "";
-                for (StackTraceElement s : stack) {
-                    exception = exception + s.toString() + "\n\t\t";
-                }
-                loggingError.setError(exception);
-                sendMessage("logging","http_errors",new Gson().toJson(loggingError));
+                setLogging500(ex,this.pingHost);
 
             } else if (ex.getStatusCode().series() == HttpStatus.Series.CLIENT_ERROR) {
                 // handle 4xx errors
                 // raw http status code e.g `404`
-                LoggingError loggingError=new LoggingError();
-                loggingError.setTimestamp(System.currentTimeMillis() / 1000L);
-                loggingError.setSourceIp(Inet4Address.getLocalHost().getHostAddress());
-                loggingError.setService("payments");
-                loggingError.setRequest(this.host);
-                loggingError.setError(ex.getStatusCode().toString());
-                sendMessage("logging","http_errors",new Gson().toJson(loggingError));
+                setLogging404(ex,this.pingHost);
 
             }
         }
@@ -132,5 +110,88 @@ public class PaymentsController {
         return email.replace("\"","").equals(myAccount.replace("\"",""));
     }
 
+    private Boolean checkIfVerified(Map<String,String[]> params)  {
+        String result = params.entrySet().stream()
+                .map(e -> e.getKey().toString() + "=" + Arrays.stream(e.getValue()).findFirst().get().toString())
+                .collect(Collectors.joining("&"));
+        String uriTest=paypalHost+result;
+        RestTemplate restTemplate=new RestTemplate();
+        Boolean verified=false;
+        try {
+            ResponseEntity answer = restTemplate.postForEntity(uriTest, null, String.class);
+
+            if(answer.getBody().toString().equals("VERIFIED")){
+                verified=true;
+            }
+            else{
+                verified=false;
+            }
+
+        }
+        catch (HttpStatusCodeException ex) {
+            if (ex.getStatusCode().series() == HttpStatus.Series.SERVER_ERROR) {
+                // handle 5xx errors
+                // raw http status code e.g `500'
+                verified=false;
+                setLogging500(ex,this.paypalHost);
+
+
+            } else if (ex.getStatusCode().series() == HttpStatus.Series.CLIENT_ERROR) {
+                // handle 4xx errors
+                // raw http status code e.g `404`
+                verified=false;
+                setLogging404(ex,this.paypalHost);
+
+            }
+
+        }
+        catch (Exception e) {
+            verified=false;
+            setLogging500(e,this.paypalHost);
+        }
+        return verified;
+
+    }
+
+    private void setLogging500(Exception ex,String host)  {
+        LoggingError loggingError = new LoggingError();
+        loggingError.setTimestamp(System.currentTimeMillis() / 1000L);
+
+        loggingError.setService("payments");
+        loggingError.setRequest(host);
+        StackTraceElement[] stack = ex.getStackTrace();
+        String exception = "";
+        for (StackTraceElement s : stack) {
+            exception = exception + s.toString() + "\n\t\t";
+        }
+        loggingError.setError(exception);
+        try {
+            loggingError.setSourceIp(Inet4Address.getLocalHost().getHostAddress());
+        }
+        catch (UnknownHostException unknownHostException){
+            loggingError.setSourceIp("unknown");
+        }
+        finally {
+            sendMessage("logging", "http_errors", new Gson().toJson(loggingError));
+
+        }
+    }
+
+    private void setLogging404(HttpStatusCodeException ex,String host) {
+        LoggingError loggingError = new LoggingError();
+        loggingError.setTimestamp(System.currentTimeMillis() / 1000L);
+        loggingError.setService("payments");
+        loggingError.setRequest(host);
+        loggingError.setError(ex.getStatusCode().toString());
+        try {
+            loggingError.setSourceIp(Inet4Address.getLocalHost().getHostAddress());
+        }
+        catch (UnknownHostException HostException){
+            loggingError.setSourceIp("unknown");
+        }
+        finally {
+            sendMessage("logging", "http_errors", new Gson().toJson(loggingError));
+        }
+    }
 
 }
