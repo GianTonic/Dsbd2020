@@ -21,10 +21,12 @@ import org.springframework.web.server.ResponseStatusException;
 import payments.Payments;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Optional;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 public class PaymentsController {
@@ -47,27 +49,21 @@ public class PaymentsController {
     }
 
     @PostMapping(path="/paypal")  //this url should map which you configured in step 5
-    public @ResponseBody void success(ModelMap modelMap, HttpServletRequest httpServletRequest, Model uiModel) throws Exception{
-        Enumeration<String> parameterNames = httpServletRequest.getParameterNames();
+    public @ResponseBody void success(HttpServletRequest httpServletRequest) throws Exception{
 
-        while (parameterNames.hasMoreElements()) {
-
-            String paramName = parameterNames.nextElement();
-            System.out.println("paramName : "+paramName);
-            String[] paramValues = httpServletRequest.getParameterValues(paramName);
-
-            for (int i = 0; i < paramValues.length; i++) {
-                String paramValue = paramValues[i];
-                System.out.println("paramName : " + paramName+ ",paramValue : " + paramValue);
-                //your logic goes here
-
-            }
-        }
+        Map<String,String[]> params =httpServletRequest.getParameterMap();
+        String result = params.entrySet().stream()
+            .map(e -> e.getKey().toString() + "=" + Arrays.stream(e.getValue()).findFirst().get().toString())
+            .collect(Collectors.joining("&"));
+        String uriTest="https://ipnpb.sandbox.paypal.com/cgi-bin/webscr?cmd=_notify-validate&"+result;
+        RestTemplate restTemplate=new RestTemplate();
+        ResponseEntity answer=restTemplate.postForEntity(uriTest,null,String.class);
+        System.out.println(answer.getBody());
     return;
     }
 
     @PostMapping(path="/ipn")
-    public @ResponseBody void ipn(@RequestBody Payments payments){
+    public @ResponseBody void ipn(@RequestParam Payments payments){
         Boolean checkmail=this.checkEmail(payments.getBusiness());
         if(checkmail) {
             sendMessage("orders","order_payd",new Gson().toJson(payments));
@@ -108,7 +104,6 @@ public class PaymentsController {
                 loggingError.setSourceIp(Inet4Address.getLocalHost().getHostAddress());
                 loggingError.setService("payments");
                 loggingError.setRequest(this.host);
-
                 StackTraceElement[] stack = ex.getStackTrace();
                 String exception = "";
                 for (StackTraceElement s : stack) {
