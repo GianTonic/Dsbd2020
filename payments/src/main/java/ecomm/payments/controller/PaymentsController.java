@@ -1,8 +1,10 @@
 package ecomm.payments.controller;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import ecomm.payments.data.HeartBeat;
 import ecomm.payments.data.LoggingError;
+import ecomm.payments.data.OrderPaidFailure;
 import ecomm.payments.service.PaymentsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,7 +16,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
 import payments.Payments;
 import javax.servlet.http.HttpServletRequest;
 import java.net.Inet4Address;
@@ -45,15 +46,30 @@ public class PaymentsController {
     }
 
     @PostMapping(path="/paypal")  //this url should map which you configured in step 5
-    public @ResponseBody void success(HttpServletRequest httpServletRequest){
+    public @ResponseBody void success(HttpServletRequest httpServletRequest)  {
 
-        Map<String,String[]> params =httpServletRequest.getParameterMap();
+        Map<String,String[]> map =httpServletRequest.getParameterMap();
+        String params=encoder(map);
+        Boolean checkMail=checkEmail(Arrays.stream(map.get("receiver_email")).findFirst().get());
         Boolean checkPayments=checkIfVerified(params);
-        Boolean checkMail=checkEmail(Arrays.stream(params.get("receiver_email")).findFirst().get());
 
+        if(!checkMail){
+            OrderPaidFailure orderPaidFailure=new OrderPaidFailure();
+            orderPaidFailure.setTimeStamp(System.currentTimeMillis() / 1000L);
+            orderPaidFailure.setParams(map);
+            sendMessage("logging","received_wrong_business_paypal_payment",new Gson().toJson(orderPaidFailure));
+            return;
+        }
+        if(!checkPayments){
+            OrderPaidFailure orderPaidFailure=new OrderPaidFailure();
+            orderPaidFailure.setTimeStamp(System.currentTimeMillis() / 1000L);
+            orderPaidFailure.setParams(map);
+            sendMessage("logging","bad_ipn_error",new Gson().toJson(orderPaidFailure));
+            return;
+        }
         System.out.println(checkMail);
         System.out.println(checkPayments);
-        return;
+
     }
 
 
@@ -65,12 +81,12 @@ public class PaymentsController {
             System.out.println((payments.toString()));
             paymentsService.addPayments(payments);
         }
-        return;
+
     }
     @GetMapping(path="/transactions")
     public @ResponseBody
     Optional<Iterable<Payments>> getAll(@RequestHeader("X-User-ID") Integer id, @RequestParam Long fromTimestamp,@RequestParam Long endTimestamp){
-        Optional<Iterable<Payments>> payments = null;
+        Optional<Iterable<Payments>> payments = Optional.empty();
         if(id==0){
             payments=Optional.ofNullable(paymentsService.fromTimestamp_endTimestamp(fromTimestamp,endTimestamp));
         }
@@ -107,49 +123,56 @@ public class PaymentsController {
     }
 
     private Boolean checkEmail(String email){
-        return email.replace("\"","").equals(myAccount.replace("\"",""));
+        return email.equals(myAccount);
     }
 
-    private Boolean checkIfVerified(Map<String,String[]> params)  {
+    private String encoder(Map<String,String[]> params){
         String result = params.entrySet().stream()
-                .map(e -> e.getKey().toString() + "=" + Arrays.stream(e.getValue()).findFirst().get().toString())
+                .map(e -> e.getKey() + "=" + Arrays.stream(e.getValue()).findFirst().get())
                 .collect(Collectors.joining("&"));
+        return result;
+    }
+    private Boolean checkIfVerified(String result)  {
+
         String uriTest=paypalHost+result;
         RestTemplate restTemplate=new RestTemplate();
-        Boolean verified=false;
+        boolean verified=false;
         try {
-            ResponseEntity answer = restTemplate.postForEntity(uriTest, null, String.class);
+            ResponseEntity<String> answer = restTemplate.postForEntity(uriTest, null, String.class);
 
-            if(answer.getBody().toString().equals("VERIFIED")){
+            if(Objects.equals(answer.getBody(), "VERIFIED")){
                 verified=true;
             }
-            else{
-                verified=false;
-            }
+
 
         }
         catch (HttpStatusCodeException ex) {
             if (ex.getStatusCode().series() == HttpStatus.Series.SERVER_ERROR) {
                 // handle 5xx errors
                 // raw http status code e.g `500'
-                verified=false;
+
                 setLogging500(ex,this.paypalHost);
 
 
             } else if (ex.getStatusCode().series() == HttpStatus.Series.CLIENT_ERROR) {
                 // handle 4xx errors
                 // raw http status code e.g `404`
-                verified=false;
+
                 setLogging404(ex,this.paypalHost);
 
             }
 
         }
+
         catch (Exception e) {
-            verified=false;
+
             setLogging500(e,this.paypalHost);
         }
-        return verified;
+        finally {
+            return verified;
+        }
+
+
 
     }
 
