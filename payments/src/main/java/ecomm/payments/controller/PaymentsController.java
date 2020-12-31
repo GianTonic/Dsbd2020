@@ -9,8 +9,7 @@ import ecomm.payments.data.OrderPaidFailure;
 import ecomm.payments.service.PaymentsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
@@ -127,7 +126,10 @@ public class PaymentsController {
         RestTemplate restTemplate=new RestTemplate();
         boolean verified=false;
         try {
-            ResponseEntity<String> answer = restTemplate.postForEntity(uriTest, null, String.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            ResponseEntity<String> answer = restTemplate.postForEntity(uriTest, entity, String.class);
 
             if(Objects.equals(answer.getBody(), "VERIFIED")){
                 verified=true;
