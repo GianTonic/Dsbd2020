@@ -9,36 +9,26 @@ import org.springframework.data.annotation.Id;
 import javax.persistence.*;
 import java.text.DecimalFormat;
 import java.util.Date;
+import java.util.Map;
+
 @Entity
-public class Payments {
+public class    Payments {
     @javax.persistence.Id
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private String id;
-    private Integer invoice;
-    private Integer item_id;
-    private Float mc_gross;
-    private String business;
+    private String kafkaMessage;
+    private String ipnMessage;
     private Long creationDateTime;
 
     @Override
     public String toString() {
         return "Payments{" +
                 "id='" + id + '\'' +
-                ", invoice=" + invoice +
-                ", item_id=" + item_id +
-                ", mc_gross=" + mc_gross +
-                ", business='" + business + '\'' +
+                ", kafkaMessage='" + kafkaMessage + '\'' +
+                ", ipnMessage='" + ipnMessage + '\'' +
                 ", creationDateTime=" + creationDateTime +
                 '}';
-    }
-
-    public Long getCreationDateTime() {
-        return creationDateTime;
-    }
-
-    public void setCreationDateTime(Long creationDateTime) {
-        this.creationDateTime = creationDateTime;
     }
 
     public String getId() {
@@ -49,36 +39,28 @@ public class Payments {
         this.id = id;
     }
 
-    public Integer getInvoice() {
-        return invoice;
+    public String getKafkaMessage() {
+        return kafkaMessage;
     }
 
-    public void setInvoice(Integer invoice) {
-        this.invoice = invoice;
+    public void setKafkaMessage(String kafkaMessage) {
+        this.kafkaMessage = kafkaMessage;
     }
 
-    public Integer getItem_id() {
-        return item_id;
+    public String getIpnMessage() {
+        return ipnMessage;
     }
 
-    public void setItem_id(Integer item_id) {
-        this.item_id = item_id;
+    public void setIpnMessage(String ipnMessage) {
+        this.ipnMessage = ipnMessage;
     }
 
-    public Float getMc_gross() {
-        return mc_gross;
+    public Long getCreationDateTime() {
+        return creationDateTime;
     }
 
-    public void setMc_gross(Float mc_gross) {
-        this.mc_gross = mc_gross;
-    }
-
-    public String getBusiness() {
-        return business;
-    }
-
-    public void setBusiness(String business) {
-        this.business = business;
+    public void setCreationDateTime(Long creationDateTime) {
+        this.creationDateTime = creationDateTime;
     }
 
 

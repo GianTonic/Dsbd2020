@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import ecomm.payments.data.HeartBeat;
 import ecomm.payments.data.LoggingError;
+import ecomm.payments.data.OrderPaid;
 import ecomm.payments.data.OrderPaidFailure;
 import ecomm.payments.service.PaymentsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,14 +46,12 @@ public class PaymentsController {
         kafkaTemplate.send(topic,key,msg);
     }
 
-    @PostMapping(path="/paypal")  //this url should map which you configured in step 5
-    public @ResponseBody void success(HttpServletRequest httpServletRequest)  {
-
+    @PostMapping(path="/ipn")  //this url should map which you configured in step 5
+    public @ResponseBody void ipn(HttpServletRequest httpServletRequest)  {
         Map<String,String[]> map =httpServletRequest.getParameterMap();
         String params=encoder(map);
         Boolean checkMail=checkEmail(Arrays.stream(map.get("receiver_email")).findFirst().get());
         Boolean checkPayments=checkIfVerified(params);
-
         if(!checkMail){
             OrderPaidFailure orderPaidFailure=new OrderPaidFailure();
             orderPaidFailure.setTimeStamp(System.currentTimeMillis() / 1000L);
@@ -67,22 +66,19 @@ public class PaymentsController {
             sendMessage("logging","bad_ipn_error",new Gson().toJson(orderPaidFailure));
             return;
         }
-        System.out.println(checkMail);
-        System.out.println(checkPayments);
-
+        OrderPaid orderPaid=new OrderPaid();
+        orderPaid.setUserId(Arrays.stream(map.get("custom")).findFirst().get());
+        orderPaid.setOrderId(Arrays.stream(map.get("item_number")).findFirst().get());
+        orderPaid.setAmountPaid(Float.parseFloat(Arrays.stream(map.get("mc_gross")).findFirst().get()));
+        sendMessage("orders","order_paid",new Gson().toJson(orderPaid));
+        Payments payments=new Payments();
+        payments.setCreationDateTime(System.currentTimeMillis() / 1000L);
+        payments.setIpnMessage(params);
+        payments.setKafkaMessage(orderPaid.toString());
+        paymentsService.addPayments(payments);
     }
 
 
-    @PostMapping(path="/ipn")
-    public @ResponseBody void ipn(@RequestParam Payments payments){
-        Boolean checkMail=this.checkEmail(payments.getBusiness());
-        if(checkMail) {
-            sendMessage("orders","order_payd",new Gson().toJson(payments));
-            System.out.println((payments.toString()));
-            paymentsService.addPayments(payments);
-        }
-
-    }
     @GetMapping(path="/transactions")
     public @ResponseBody
     Optional<Iterable<Payments>> getAll(@RequestHeader("X-User-ID") Integer id, @RequestParam Long fromTimestamp,@RequestParam Long endTimestamp){
@@ -95,31 +91,25 @@ public class PaymentsController {
     
     @Scheduled(fixedDelayString = "${timer}")
     public void heartbeat() {
-
         HeartBeat heartbeat=new HeartBeat();
         heartbeat.setService("payments");
         heartbeat.setServiceStatus("up");
         heartbeat.setDbStatus("up");
         RestTemplate restTemplate=new RestTemplate();
-
         try {
             restTemplate.postForEntity(pingHost, heartbeat, String.class);
         }
-
         catch (HttpStatusCodeException ex) {
             if (ex.getStatusCode().series() == HttpStatus.Series.SERVER_ERROR) {
                 // handle 5xx errors
                 // raw http status code e.g `500'
                 setLogging500(ex,this.pingHost);
-
             } else if (ex.getStatusCode().series() == HttpStatus.Series.CLIENT_ERROR) {
                 // handle 4xx errors
                 // raw http status code e.g `404`
                 setLogging404(ex,this.pingHost);
-
             }
         }
-
     }
 
     private Boolean checkEmail(String email){
@@ -133,7 +123,6 @@ public class PaymentsController {
         return result;
     }
     private Boolean checkIfVerified(String result)  {
-
         String uriTest=paypalHost+result;
         RestTemplate restTemplate=new RestTemplate();
         boolean verified=false;
@@ -143,37 +132,24 @@ public class PaymentsController {
             if(Objects.equals(answer.getBody(), "VERIFIED")){
                 verified=true;
             }
-
-
         }
         catch (HttpStatusCodeException ex) {
             if (ex.getStatusCode().series() == HttpStatus.Series.SERVER_ERROR) {
                 // handle 5xx errors
                 // raw http status code e.g `500'
-
                 setLogging500(ex,this.paypalHost);
-
-
             } else if (ex.getStatusCode().series() == HttpStatus.Series.CLIENT_ERROR) {
                 // handle 4xx errors
                 // raw http status code e.g `404`
-
                 setLogging404(ex,this.paypalHost);
-
             }
-
         }
-
         catch (Exception e) {
-
             setLogging500(e,this.paypalHost);
         }
         finally {
             return verified;
         }
-
-
-
     }
 
     private void setLogging500(Exception ex,String host)  {
