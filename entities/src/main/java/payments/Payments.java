@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.Map;
 
 @Entity
-public class    Payments {
+public class Payments {
     @javax.persistence.Id
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

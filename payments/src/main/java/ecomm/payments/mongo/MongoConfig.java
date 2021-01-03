@@ -34,7 +34,6 @@ public class MongoConfig {
 
     @Bean
     public MongoClient mongo() {
-        //mongodb://root:toor@mongo:27017/test?authSource=admin
         ConnectionString connectionString = new ConnectionString(uri+user+":"+password+"@"+host+":"+port+"/"+db+"?authSource="+authdb);
         MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
             .applyConnectionString(connectionString)
