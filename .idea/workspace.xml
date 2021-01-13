@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="50f326e8-de4a-403a-a2e6-ae5772222479" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/Documentation/Doc_Payments_Service.docx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Documentation/Doc_Payments_Service.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Documentation/img/DiagrammaDelleClassi.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Documentation/img/DiagrammaInterazIPN.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ecomm.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entities/entities.iml" beforeDir="false" afterPath="$PROJECT_DIR$/entities/entities.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/payments/src/main/java/ecomm/payments/mongo/MongoConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/payments/src/main/java/ecomm/payments/mongo/MongoConfig.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="mavenHome" value="$APPLICATION_HOME_DIR$/plugins/maven/lib/maven3" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProjectId" id="1mQLMZXlZ5jPcYloPBmskrQBuRR" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/.." />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
+  </component>
+  <component name="RunManager">
+    <configuration name="PaymentsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="payments" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="ecomm.payments.PaymentsApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="50f326e8-de4a-403a-a2e6-ae5772222479" name="Default Changelist" comment="" />
+      <created>1609420821281</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1609420821281</updated>
+      <workItem from="1609420822864" duration="5522000" />
+      <workItem from="1609615815493" duration="101000" />
+      <workItem from="1609615930179" duration="47000" />
+      <workItem from="1609615988633" duration="39000" />
+      <workItem from="1609616032036" duration="7000" />
+      <workItem from="1609616050113" duration="33000" />
+      <workItem from="1609616093131" duration="34000" />
+      <workItem from="1609616149158" duration="39000" />
+      <workItem from="1609616202198" duration="50000" />
+      <workItem from="1609616263076" duration="18000" />
+      <workItem from="1609616336433" duration="13000" />
+      <workItem from="1610574060844" duration="375000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="768" y="206" width="565" height="633" key="#com.intellij.ide.util.MemberChooser" timestamp="1609424069358">
+      <screen x="0" y="27" width="1920" height="985" />
+    </state>
+    <state x="768" y="206" width="565" height="633" key="#com.intellij.ide.util.MemberChooser/0.27.1920.985@0.27.1920.985" timestamp="1609424069358" />
+    <state x="743" y="277" width="424" height="491" key="FileChooserDialogImpl" timestamp="1609616347554">
+      <screen x="0" y="27" width="1920" height="985" />
+    </state>
+    <state x="743" y="277" width="424" height="491" key="FileChooserDialogImpl/0.27.1920.985@0.27.1920.985" timestamp="1609616347554" />
+    <state x="449" y="154" width="1022" height="737" key="SettingsEditor" timestamp="1609616169823">
+      <screen x="0" y="27" width="1920" height="985" />
+    </state>
+    <state x="449" y="154" width="1022" height="737" key="SettingsEditor/0.27.1920.985@0.27.1920.985" timestamp="1609616169823" />
+  </component>
+</project>
