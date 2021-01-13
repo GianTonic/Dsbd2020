@@ -8,6 +8,7 @@ import payments.Payments;
 import java.util.Date;
 
 @Service
+@Transactional
 public class PaymentsService {
 
     @Autowired

@@ -80,8 +80,8 @@ public class PaymentsController {
         sendMessage("orders","order_paid",new Gson().toJson(orderPaid));
         Payments payments=new Payments();
         payments.setCreationDateTime(System.currentTimeMillis() / 1000L);
-        payments.setIpnMessage(params);
-        payments.setKafkaMessage(orderPaid.toString());
+        payments.setIpnMessage(new Gson().toJson(map));
+        payments.setKafkaMessage(new Gson().toJson(orderPaid));
         //aggiungo sul db il pagamento effettuato
         paymentsService.addPayments(payments);
     }
